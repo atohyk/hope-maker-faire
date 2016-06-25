@@ -8,11 +8,16 @@ const int ledPin = 3;
 const int switchPin = 2;
 const int servoPin = 5;
 unsigned long duration;
+const float durationExpSens = 0.1;
 const int maxSonar = 2000;
 const int minSonar = 200;
 int ledValue;
 int servoValue;
 unsigned char switchValue;
+unsigned long serialPrint;
+const int servoPrintDelay = 500;
+const float servoExpSens = 0.1;
+const unsigned char servoMaxAngle = 180;
 
 void setup() {
   // put your setup code here, to run once:
@@ -26,8 +31,9 @@ void setup() {
   pinMode(ledPin, OUTPUT);
   pinMode(switchPin, INPUT);
   digitalWrite(trigPin, LOW);
-  digitalWrite(switchPin, LOW);
+  digitalWrite(switchPin, HIGH);
   myServo.attach(servoPin);
+  serialPrint = millis();
 }
 
 void loop() {
@@ -37,43 +43,46 @@ void loop() {
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-  duration = pulseIn(echoPin, HIGH);
-  Serial.print("Sonar pulse duration: ");
-  Serial.println(duration);
+  duration = (unsigned long)((1 -durationExpSens) * duration + durationExpSens * pulseIn(echoPin, HIGH));
+  
+
+  if(duration > maxSonar){
+    duration = maxSonar;
+  }
+  else if(duration < minSonar){
+    duration = minSonar;
+  }
 
   //checking for the switch
   switchValue = digitalRead(switchPin);
-  Serial.print("Switch: ");
-  if(switchValue){
-    Serial.println("On");
-  }
-  else{
-    Serial.println("Off");
-  }
+  
 
   //writing the led value
-  if(!switchValue){
+  if(switchValue){
     ledValue = (duration-minSonar)*255/maxSonar;
     analogWrite(ledPin, ledValue);
-    Serial.print("Led Value: ");
-    Serial.println(ledValue);
   }
   else{
     ledValue = 0;
     analogWrite(ledPin, ledValue);
-    Serial.print("Led Value: ");
-    Serial.println(ledValue);
   }
   
 
   //writing the servo value
-  servoValue = (duration-minSonar)*180/maxSonar;
+  servoValue = (int)((1 - servoExpSens)*servoValue + servoExpSens*(duration-minSonar)*servoMaxAngle/maxSonar);
   myServo.write(servoValue);
-  Serial.print("Servo Value: ");
-  Serial.println(servoValue);
 
   //delaying so this doesn't happen too often and we don't get flooded with information
-  delay(500);
-  
+  if(millis() - serialPrint > servoPrintDelay){
+    serialPrint = millis();
+    Serial.print("Sonar pulse duration: ");
+    Serial.println(duration);
+    Serial.print("Switch: ");
+    Serial.println(switchValue);
+    Serial.print("Led Value: ");
+    Serial.println(ledValue);
+    Serial.print("Servo Value: ");
+    Serial.println(servoValue);
+  }
 }
 
