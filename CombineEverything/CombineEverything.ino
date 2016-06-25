@@ -59,7 +59,7 @@ void loop() {
 
   //writing the led value
   if(switchValue){
-    ledValue = (duration-minSonar)*255/maxSonar;
+    ledValue = (duration-minSonar)*255/(maxSonar-minSonar);
     analogWrite(ledPin, ledValue);
   }
   else{
@@ -69,7 +69,7 @@ void loop() {
   
 
   //writing the servo value
-  servoValue = (int)((1 - servoExpSens)*servoValue + servoExpSens*(duration-minSonar)*servoMaxAngle/maxSonar);
+  servoValue = (int)((1 - servoExpSens)*servoValue + servoExpSens*(duration-minSonar)*servoMaxAngle/(maxSonar-minSonar));
   myServo.write(servoValue);
 
   //delaying so this doesn't happen too often and we don't get flooded with information
